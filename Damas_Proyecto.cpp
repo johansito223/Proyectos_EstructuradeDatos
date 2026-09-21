@@ -138,6 +138,7 @@ public:
                         break;
                     }
                 }
+                //para colorear las fichas
                 bool ColorTurnoActual = (turnoBlancas && esBlanca(casillas[f][c])) || (!turnoBlancas && esNegra(casillas[f][c]));
                 if (numero != 0) {
                     cout << " "<< COLOR_TURNO << numero << COLOR_NOTURNO<< " |";
@@ -250,7 +251,9 @@ public:
             }
         }
         return fichas;
+
     }
+    //muestra los numeros de fichas
     void MostrarFichasNumero (const vector<position> & fichas) {
         cout << "\nTus fichas disponibles\n";
 
@@ -260,7 +263,7 @@ public:
                 <<", columna "<< fichas[i].colu<< "\n";
         }
     }
-
+//para que la ficha se mueva ala izq o derecha
     int ColumnaDireccion (const string& direccion){
         if (direccion == "izq")
             return -1;
