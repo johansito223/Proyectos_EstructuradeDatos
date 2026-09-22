@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
-
+#include <fstream>
 using namespace std;
 
 enum class ficha {
@@ -247,6 +247,9 @@ private:
     }
 
 public:
+
+
+    vector<movimiento> historial;
     vector <position> ObtenerFichasColor(bool blancas) {
         vector<position> fichas;
 
@@ -282,7 +285,29 @@ public:
             }
         }
         return fichas;
+    
+    }
+    void GuardarHistorial(const string& Datos) {
+        ofstream archivo(Datos);
 
+        for (auto& m: historial){
+            archivo <<m.origen.fila<< " "<<m.origen.colu<< " "
+                    <<m.destino.fila<< " "<<m.destino.colu<<" "
+                    <<m.fichasComidas.size();
+            for (auto& p : m.fichasComidas){
+                archivo<< " "<<p.fila<< " "<< p.colu;
+            }
+            archivo <<"\n";
+        }
+        archivo.close();
+    }
+
+    void CargarHistorial(const string& Datos){
+        ifstream archivo(Datos);
+
+        int fo,co,fd,cd, numComidas;
+
+        
     }
     //muestra los numeros de fichas
     void MostrarFichasNumero (const vector<position> & fichas) {
@@ -700,7 +725,7 @@ public:
 
                 continue;
             }
-
+            historial.push_back(*elegido);
             ejecutarMovimiento(*elegido);
             auto fin = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> duracion = fin - inicio;
