@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 using namespace std;
 
@@ -28,7 +29,8 @@ class tablero {
 private:
     ficha casillas[8][8];
     const string COLOR_TURNO = "\033[1;33m";
-    const string COLOR_NOTURNO = "\033[0m";
+    const string COLOR_NOTURNO = "\033[5;33m";
+    const string COLOR_RESET = "\033[0m";
 public:
     tablero() {
 
@@ -91,13 +93,13 @@ public:
     }
 
 
-    void imprimir(bool turnoBlancas, const vector<position>& fichasTurno) const { 
+    void imprimir(bool turnoBlancas, const vector<position>& fichasBlancas, const vector<position>& fichasNegras) const { 
 
         
         
 
-        cout << "\n    0   1   2   3   4   5   6   7\n";
-        cout << "  +---+---+---+---+---+---+---+---+\n";
+        cout << "\n      0     1     2     3     4     5     6    7\n";
+        cout << "  +-----+-----+-----+-----+-----+-----+-----+-----+\n";
 
         for (int f = 0; f < 8; f++) {
 
@@ -131,24 +133,33 @@ public:
                 }
 
                 int numero = 0;
+                bool esFichaBlanca = esBlanca(casillas[f][c]);
+                bool esFichaNegra = esNegra(casillas[f][c]);
 
-                for (int i = 0; i < (int)fichasTurno.size();i++) {
-                    if (fichasTurno[i].fila == f && fichasTurno[i].colu == c){
+                const vector<position>& listaBusqueda = esFichaBlanca ? fichasBlancas : fichasNegras;
+
+                for (int i = 0; i <(int)listaBusqueda.size(); i++){
+                    if (listaBusqueda[i].fila == f && listaBusqueda[i].colu == c){
+
                         numero = i + 1;
-                        break;
                     }
                 }
                 //para colorear las fichas
-                bool ColorTurnoActual = (turnoBlancas && esBlanca(casillas[f][c])) || (!turnoBlancas && esNegra(casillas[f][c]));
+                bool ColorTurnoActual = (turnoBlancas && esFichaBlanca) || (!turnoBlancas && esFichaNegra);
+                const string& color = ColorTurnoActual ? COLOR_TURNO : "";
                 if (numero != 0) {
-                    cout << " "<< COLOR_TURNO << numero << COLOR_NOTURNO<< " |";
-                }else{
-                    cout << " "<<numero<<" |";
+                    if (numero >= 10) {
+                        cout << " " << color << numero << COLOR_RESET << "  |";
+                    } else {
+                        cout << "  " << color << numero << COLOR_RESET <<"  |";
+                    }
+                } else {
+                    cout << "     |";
                 }
             }
 
             cout << "\n";
-            cout << "  +---+---+---+---+---+---+---+---+\n";
+            cout << "  +-----+-----+-----+-----+-----+-----+-----+-----+\n";
         }
 
         cout << "b/B = blancas (normal/dama)   "
@@ -201,6 +212,7 @@ public:
 
 class Juego {
 
+
 private:
 
     tablero tableroJuego;
@@ -235,7 +247,26 @@ private:
     }
 
 public:
-    vector<position> ObtenerFichasTurno() {
+    vector <position> ObtenerFichasColor(bool blancas) {
+        vector<position> fichas;
+
+
+
+        for (int f = 0; f < 8; f++){
+            for (int c = 0; c< 8; c++){
+                position pos {f,c};
+                ficha pieza = tableroJuego.obtener(pos);
+                if (blancas && tableroJuego.esBlanca(pieza)){
+                    fichas.push_back(pos);
+                }
+                if (!blancas&& tableroJuego.esNegra(pieza)){
+                    fichas.push_back(pos);
+                }
+            }
+        }
+        return fichas;
+    }
+    vector<position> ObtenerFichasTurno(bool blancas) {
         vector <position> fichas;
         for (int f = 0; f < 8; f++){
             for (int c = 0; c < 8; c++){
@@ -566,7 +597,6 @@ public:
 
 
     void jugar() {
-
         cout << "===================================\n";
         cout << "          JUEGO DE DAMAS\n";
         cout << "===================================\n";
@@ -576,8 +606,16 @@ public:
 
 
         while (true) {
-            vector<position> fichasTurno = ObtenerFichasTurno();
-            tableroJuego.imprimir(turnoBlancas, fichasTurno);
+
+            vector<position> fichasBlancas = ObtenerFichasColor(true);
+            vector<position> fichasNegras = ObtenerFichasColor(false);
+            vector<position> fichasTurno;
+            if (turnoBlancas){
+                fichasTurno = fichasBlancas;
+            }else{
+                fichasTurno = fichasNegras;
+            }
+            tableroJuego.imprimir(turnoBlancas, fichasBlancas,fichasNegras);
 
 
             if (hayGanador())
@@ -611,9 +649,11 @@ public:
 
             int numeroFicha;
             string direccion;
+            auto inicio = std::chrono::high_resolution_clock::now();
 
             cout << "Elige ficha (numero) y direccion (izq/der): ";
 
+                
             if (!(cin >> numeroFicha >> direccion)) {
                 cout << "Entrada invalida.\n";
                 break;
@@ -662,7 +702,10 @@ public:
             }
 
             ejecutarMovimiento(*elegido);
+            auto fin = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> duracion = fin - inicio;
 
+            std::cout << "tiempo: "<< duracion.count()<<"segundos.\n";
             turnoBlancas = !turnoBlancas;
         }
 
