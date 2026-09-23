@@ -1,749 +1,781 @@
-#include <iostream>
-#include <vector>
-#include <chrono>
-#include <fstream>
-using namespace std;
+    #include <iostream>
+    #include <vector>
+    #include <chrono>
+    #include <fstream>
+    using namespace std;
 
-enum class ficha {
-    VACIA,
-    BLANCA,
-    DAMA_BLANCA,
-    NEGRA,
-    DAMA_NEGRA
-};
-//vamos a la playa oo oooo o
-struct position {
-    int fila, colu;
+    enum class ficha {
+        VACIA,
+        BLANCA,
+        DAMA_BLANCA,
+        NEGRA,
+        DAMA_NEGRA
+    };
+    //vamos a la playa oo oooo o
+    struct position {
+        int fila, colu;
 
-    bool operator==(const position& otra) const {
-        return fila == otra.fila && colu == otra.colu;
-    }
-};
-struct movimiento {
-    position origen;
-    position destino;
-    vector<position> fichasComidas;
-};
-class tablero {
+        bool operator==(const position& otra) const {
+            return fila == otra.fila && colu == otra.colu;
+        }
+    };
+    struct movimiento {
+        position origen;
+        position destino;
+        vector<position> fichasComidas;
+    };
+    class tablero {
 
-private:
-    ficha casillas[8][8];
-    const string COLOR_TURNO = "\033[1;33m";
-    const string COLOR_NOTURNO = "\033[5;33m";
-    const string COLOR_RESET = "\033[0m";
-public:
-    tablero() {
+    private:
+        ficha casillas[8][8];
+        const string COLOR_TURNO = "\033[1;33m";
+        const string COLOR_NOTURNO = "\033[5;33m";
+        const string COLOR_RESET = "\033[0m";
+    public:
+        tablero() {
 
-        inicializar();
-    }
+            inicializar();
+        }
 
-    void inicializar() {
+        void inicializar() {
 
-        for (int f = 0; f < 8; f++)
-            for (int c = 0; c < 8; c++)
-                casillas[f][c] = ficha::VACIA;
+            for (int f = 0; f < 8; f++)
+                for (int c = 0; c < 8; c++)
+                    casillas[f][c] = ficha::VACIA;
 
-        // Fichas negras
-        for (int f = 0; f < 3; f++)
-            for (int c = 0; c < 8; c++)
-                if ((f + c) % 2 == 1)
-                    casillas[f][c] = ficha::NEGRA;
+            // Fichas negras
+            for (int f = 0; f < 3; f++)
+                for (int c = 0; c < 8; c++)
+                    if ((f + c) % 2 == 1)
+                        casillas[f][c] = ficha::NEGRA;
 
-        // Fichas blancas
-        for (int f = 5; f < 8; f++)
-            for (int c = 0; c < 8; c++)
-                if ((f + c) % 2 == 1)
-                    casillas[f][c] = ficha::BLANCA;
-    }
+            // Fichas blancas
+            for (int f = 5; f < 8; f++)
+                for (int c = 0; c < 8; c++)
+                    if ((f + c) % 2 == 1)
+                        casillas[f][c] = ficha::BLANCA;
+        }
 
-    bool dentroDelTablero(int f, int c) const {
-        return f >= 0 && f < 8 && c >= 0 && c < 8;
-    }
+        bool dentroDelTablero(int f, int c) const {
+            return f >= 0 && f < 8 && c >= 0 && c < 8;
+        }
 
-    ficha obtener(position p) const {
-        return casillas[p.fila][p.colu];
-    }
+        ficha obtener(position p) const {
+            return casillas[p.fila][p.colu];
+        }
 
-    void colocar(position p, ficha f) {
-        casillas[p.fila][p.colu] = f;
-    }
+        void colocar(position p, ficha f) {
+            casillas[p.fila][p.colu] = f;
+        }
 
-    bool esBlanca(ficha f) const {
-        return f == ficha::BLANCA ||
-               f == ficha::DAMA_BLANCA;
-    }
+        bool esBlanca(ficha f) const {
+            return f == ficha::BLANCA ||
+                f == ficha::DAMA_BLANCA;
+        }
 
-    bool esNegra(ficha f) const {
-        return f == ficha::NEGRA ||
-               f == ficha::DAMA_NEGRA;
-    }
+        bool esNegra(ficha f) const {
+            return f == ficha::NEGRA ||
+                f == ficha::DAMA_NEGRA;
+        }
 
-    bool esDama(ficha f) const {
-        return f == ficha::DAMA_BLANCA ||
-               f == ficha::DAMA_NEGRA;
-    }
+        bool esDama(ficha f) const {
+            return f == ficha::DAMA_BLANCA ||
+                f == ficha::DAMA_NEGRA;
+        }
 
-    bool colorContrario(ficha a, ficha b) const {
+        bool colorContrario(ficha a, ficha b) const {
 
-        if (a == ficha::VACIA || b == ficha::VACIA)
-            return false;
+            if (a == ficha::VACIA || b == ficha::VACIA)
+                return false;
 
-        return (esBlanca(a) && esNegra(b)) ||
-               (esNegra(a) && esBlanca(b));
-    }
+            return (esBlanca(a) && esNegra(b)) ||
+                (esNegra(a) && esBlanca(b));
+        }
 
 
-    void imprimir(bool turnoBlancas, const vector<position>& fichasBlancas, const vector<position>& fichasNegras) const { 
+        void imprimir(bool turnoBlancas, const vector<position>& fichasBlancas, const vector<position>& fichasNegras) const { 
 
-        
-        
+            
+            
 
-        cout << "\n      0     1     2     3     4     5     6    7\n";
-        cout << "  +-----+-----+-----+-----+-----+-----+-----+-----+\n";
-
-        for (int f = 0; f < 8; f++) {
-
-            cout << f << " |";
-
-            for (int c = 0; c < 8; c++) {
-
-                char simbolo = ' ';
-
-                switch (casillas[f][c]) {
-
-                    case ficha::VACIA:
-                        simbolo = ((f + c) % 2 == 1) ? '.' : ' ';
-                        break;
-
-                    case ficha::BLANCA:
-                        simbolo = 'b';
-                        break;
-
-                    case ficha::DAMA_BLANCA:
-                        simbolo = 'B';
-                        break;
-
-                    case ficha::NEGRA:
-                        simbolo = 'n';
-                        break;
-
-                    case ficha::DAMA_NEGRA:
-                        simbolo = 'N';
-                        break;
-                }
-
-                int numero = 0;
-                bool esFichaBlanca = esBlanca(casillas[f][c]);
-                bool esFichaNegra = esNegra(casillas[f][c]);
-
-                const vector<position>& listaBusqueda = esFichaBlanca ? fichasBlancas : fichasNegras;
-
-                for (int i = 0; i <(int)listaBusqueda.size(); i++){
-                    if (listaBusqueda[i].fila == f && listaBusqueda[i].colu == c){
-
-                        numero = i + 1;
-                    }
-                }
-                //para colorear las fichas
-                bool ColorTurnoActual = (turnoBlancas && esFichaBlanca) || (!turnoBlancas && esFichaNegra);
-                const string& color = ColorTurnoActual ? COLOR_TURNO : "";
-                if (numero != 0) {
-                    if (numero >= 10) {
-                        cout << " " << color << numero << COLOR_RESET << "  |";
-                    } else {
-                        cout << "  " << color << numero << COLOR_RESET <<"  |";
-                    }
-                } else {
-                    cout << "     |";
-                }
-            }
-
-            cout << "\n";
+            cout << "\n      0     1     2     3     4     5     6    7\n";
             cout << "  +-----+-----+-----+-----+-----+-----+-----+-----+\n";
-        }
 
-        cout << "b/B = blancas (normal/dama)   "
-             << "n/N = negras (normal/dama)\n";
-    }
+            for (int f = 0; f < 8; f++) {
 
-    void intentarCoronar(position p) {
+                cout << f << " |";
 
-        ficha f = obtener(p);
+                for (int c = 0; c < 8; c++) {
 
-        if (f == ficha::BLANCA && p.fila == 0) {
+                    char simbolo = ' ';
 
-            colocar(p, ficha::DAMA_BLANCA);
+                    switch (casillas[f][c]) {
 
-            cout << "\n>> Una ficha blanca corono como DAMA en ("
-                 << p.fila << "," << p.colu << ")\n";
+                        case ficha::VACIA:
+                            simbolo = ((f + c) % 2 == 1) ? '.' : ' ';
+                            break;
 
-        }
-        else if (f == ficha::NEGRA && p.fila == 7) {
+                        case ficha::BLANCA:
+                            simbolo = 'b';
+                            break;
 
-            colocar(p, ficha::DAMA_NEGRA);
+                        case ficha::DAMA_BLANCA:
+                            simbolo = 'B';
+                            break;
 
-            cout << "\n>> Una ficha negra corono como DAMA en ("
-                 << p.fila << "," << p.colu << ")\n";
-        }
-    }
+                        case ficha::NEGRA:
+                            simbolo = 'n';
+                            break;
 
-    
-    int contarFichas(bool blancas) const {
+                        case ficha::DAMA_NEGRA:
+                            simbolo = 'N';
+                            break;
+                    }
 
-        int contador = 0;
+                    int numero = 0;
+                    bool esFichaBlanca = esBlanca(casillas[f][c]);
+                    bool esFichaNegra = esNegra(casillas[f][c]);
 
-        for (int f = 0; f < 8; f++) {
+                    const vector<position>& listaBusqueda = esFichaBlanca ? fichasBlancas : fichasNegras;
 
-            for (int c = 0; c < 8; c++) {
+                    for (int i = 0; i <(int)listaBusqueda.size(); i++){
+                        if (listaBusqueda[i].fila == f && listaBusqueda[i].colu == c){
 
-                ficha pieza = casillas[f][c];
-
-                if (blancas && esBlanca(pieza))
-                    contador++;
-
-                if (!blancas && esNegra(pieza))
-                    contador++;
-            }
-        }
-
-        return contador;
-    }
-};
-
-class Juego {
-
-
-private:
-
-    tablero tableroJuego;
-    bool turnoBlancas;
-
-    vector<pair<int, int>> direccionesDe(
-        ficha pieza,
-        const tablero& t
-    ) {
-
-        if (t.esDama(pieza))
-            return {
-                {-1, -1},
-                {-1, 1},
-                {1, -1},
-                {1, 1}
-            };
-
-        if (pieza == ficha::BLANCA)
-            return {
-                {-1, -1},
-                {-1, 1}
-            };
-
-        if (pieza == ficha::NEGRA)
-            return {
-                {1, -1},
-                {1, 1}
-            };
-
-        return {};
-    }
-
-public:
-
-
-    vector<movimiento> historial;
-    vector <position> ObtenerFichasColor(bool blancas) {
-        vector<position> fichas;
-
-
-
-        for (int f = 0; f < 8; f++){
-            for (int c = 0; c< 8; c++){
-                position pos {f,c};
-                ficha pieza = tableroJuego.obtener(pos);
-                if (blancas && tableroJuego.esBlanca(pieza)){
-                    fichas.push_back(pos);
+                            numero = i + 1;
+                        }
+                    }
+                    //para colorear las fichas
+                    bool ColorTurnoActual = (turnoBlancas && esFichaBlanca) || (!turnoBlancas && esFichaNegra);
+                    const string& color = ColorTurnoActual ? COLOR_TURNO : "";
+                    if (numero != 0) {
+                        if (numero >= 10) {
+                            cout << " " << color << numero << COLOR_RESET << "  |";
+                        } else {
+                            cout << "  " << color << numero << COLOR_RESET <<"  |";
+                        }
+                    } else {
+                        cout << "     |";
+                    }
                 }
-                if (!blancas&& tableroJuego.esNegra(pieza)){
-                    fichas.push_back(pos);
-                }
+
+                cout << "\n";
+                cout << "  +-----+-----+-----+-----+-----+-----+-----+-----+\n";
+            }
+
+            cout << "b/B = blancas (normal/dama)   "
+                << "n/N = negras (normal/dama)\n";
+        }
+
+        void intentarCoronar(position p) {
+
+            ficha f = obtener(p);
+
+            if (f == ficha::BLANCA && p.fila == 0) {
+
+                colocar(p, ficha::DAMA_BLANCA);
+
+                cout << "\n>> Una ficha blanca corono como DAMA en ("
+                    << p.fila << "," << p.colu << ")\n";
+
+            }
+            else if (f == ficha::NEGRA && p.fila == 7) {
+
+                colocar(p, ficha::DAMA_NEGRA);
+
+                cout << "\n>> Una ficha negra corono como DAMA en ("
+                    << p.fila << "," << p.colu << ")\n";
             }
         }
-        return fichas;
-    }
-    vector<position> ObtenerFichasTurno(bool blancas) {
-        vector <position> fichas;
-        for (int f = 0; f < 8; f++){
-            for (int c = 0; c < 8; c++){
-                position pos{f, c};
-                ficha pieza = tableroJuego.obtener(pos);
-
-                if (pieza == ficha::VACIA)
-                    continue;
-                if (turnoBlancas && tableroJuego.esBlanca(pieza))
-                    fichas.push_back(pos);
-                if (!turnoBlancas && tableroJuego.esNegra(pieza))
-                    fichas.push_back(pos);
-            }
-        }
-        return fichas;
-    
-    }
-    void GuardarHistorial(const string& Datos) {
-        ofstream archivo(Datos);
-
-        for (auto& m: historial){
-            archivo <<m.origen.fila<< " "<<m.origen.colu<< " "
-                    <<m.destino.fila<< " "<<m.destino.colu<<" "
-                    <<m.fichasComidas.size();
-            for (auto& p : m.fichasComidas){
-                archivo<< " "<<p.fila<< " "<< p.colu;
-            }
-            archivo <<"\n";
-        }
-        archivo.close();
-    }
-
-    void CargarHistorial(const string& Datos){
-        ifstream archivo(Datos);
-
-        int fo,co,fd,cd, numComidas;
 
         
-    }
-    //muestra los numeros de fichas
-    void MostrarFichasNumero (const vector<position> & fichas) {
-        cout << "\nTus fichas disponibles\n";
+        int contarFichas(bool blancas) const {
 
-        for (int i = 0; i < int(fichas.size()); i++) {
-            cout<<"Ficha"<<(i + 1)
-                <<"--> Fila "<<fichas[i].fila
-                <<", columna "<< fichas[i].colu<< "\n";
-        }
-    }
-//para que la ficha se mueva ala izq o derecha
-    int ColumnaDireccion (const string& direccion){
-        if (direccion == "izq")
-            return -1;
-        if (direccion == "der")
-            return 1;
-        return 0;
-    }
-    Juego() : turnoBlancas(true) {}
-    void generarCapturasDesde(
-        position origen,
-        vector<position> capturadasPrevias,
-        tablero tableroSim,
-        vector<movimiento>& resultado
-    ) {
+            int contador = 0;
 
-        ficha pieza = tableroSim.obtener(origen);
+            for (int f = 0; f < 8; f++) {
 
-        for (auto& d : direccionesDe(pieza, tableroSim)) {
+                for (int c = 0; c < 8; c++) {
 
-            int fe = origen.fila + d.first;
-            int ce = origen.colu + d.second;
+                    ficha pieza = casillas[f][c];
 
-            int fd = origen.fila + 2 * d.first;
-            int cd = origen.colu + 2 * d.second;
+                    if (blancas && esBlanca(pieza))
+                        contador++;
 
-            if (!tableroSim.dentroDelTablero(fd, cd))
-                continue;
-
-            position posEnemigo{fe, ce};
-            position posDestino{fd, cd};
-
-
-            bool yaCapturada = false;
-
-            for (auto& p : capturadasPrevias) {
-
-                if (p == posEnemigo) {
-                    yaCapturada = true;
-                    break;
+                    if (!blancas && esNegra(pieza))
+                        contador++;
                 }
             }
 
-            if (yaCapturada)
-                continue;
+            return contador;
+        }
+    };
+
+    class Juego {
 
 
-            ficha fichaEnemiga =
-                tableroSim.obtener(posEnemigo);
+    private:
 
-            ficha fichaDestino =
-                tableroSim.obtener(posDestino);
+        tablero tableroJuego;
+        bool turnoBlancas;
 
-            if (
-                tableroSim.colorContrario(
-                    pieza,
-                    fichaEnemiga
-                )
-                &&
-                fichaDestino == ficha::VACIA
-            ) {
+        vector<pair<int, int>> direccionesDe(
+            ficha pieza,
+            const tablero& t
+        ) {
 
-                tablero copia = tableroSim;
+            if (t.esDama(pieza))
+                return {
+                    {-1, -1},
+                    {-1, 1},
+                    {1, -1},
+                    {1, 1}
+                };
 
-                copia.colocar(
-                    origen,
-                    ficha::VACIA
-                );
+            if (pieza == ficha::BLANCA)
+                return {
+                    {-1, -1},
+                    {-1, 1}
+                };
 
-                copia.colocar(
-                    posEnemigo,
-                    ficha::VACIA
-                );
+            if (pieza == ficha::NEGRA)
+                return {
+                    {1, -1},
+                    {1, 1}
+                };
 
-                copia.colocar(
-                    posDestino,
-                    pieza
-                );
+            return {};
+        }
 
-
-                vector<position> nuevasCapturadas =
-                    capturadasPrevias;
-
-                nuevasCapturadas.push_back(
-                    posEnemigo
-                );
+    public:
 
 
-                vector<movimiento> continuaciones;
-
-                generarCapturasDesde(
-                    posDestino,
-                    nuevasCapturadas,
-                    copia,
-                    continuaciones
-                );
+        vector<movimiento> historial;
+        vector <position> ObtenerFichasColor(bool blancas) {
+            vector<position> fichas;
 
 
-                if (!continuaciones.empty()) {
 
-                    for (auto& m : continuaciones)
-                        resultado.push_back(m);
-
+            for (int f = 0; f < 8; f++){
+                for (int c = 0; c< 8; c++){
+                    position pos {f,c};
+                    ficha pieza = tableroJuego.obtener(pos);
+                    if (blancas && tableroJuego.esBlanca(pieza)){
+                        fichas.push_back(pos);
+                    }
+                    if (!blancas&& tableroJuego.esNegra(pieza)){
+                        fichas.push_back(pos);
+                    }
                 }
-                else {
+            }
+            return fichas;
+        }
+        vector<position> ObtenerFichasTurno(bool blancas) {
+            vector <position> fichas;
+            for (int f = 0; f < 8; f++){
+                for (int c = 0; c < 8; c++){
+                    position pos{f, c};
+                    ficha pieza = tableroJuego.obtener(pos);
 
-                    movimiento mov{
+                    if (pieza == ficha::VACIA)
+                        continue;
+                    if (turnoBlancas && tableroJuego.esBlanca(pieza))
+                        fichas.push_back(pos);
+                    if (!turnoBlancas && tableroJuego.esNegra(pieza))
+                        fichas.push_back(pos);
+                }
+            }
+            return fichas;
+        
+        }
+        void GuardarHistorial(const string& Datos) {
+            ofstream archivo(Datos);
+
+            for (auto& m: historial){
+                archivo <<m.origen.fila<< " "<<m.origen.colu<< " "
+                        <<m.destino.fila<< " "<<m.destino.colu<<" "
+                        <<m.fichasComidas.size();
+                for (auto& p : m.fichasComidas){
+                    archivo<< " "<<p.fila<< " "<< p.colu;
+                }
+                archivo <<"\n";
+            }
+            archivo.close();
+        }
+
+        void CargarHistorial(const string& Datos){
+            ifstream archivo(Datos);
+
+            int fo,co,fd,cd, numComidas;
+
+            while (archivo >> fo >> co >> fd >> cd >> numComidas) {
+                movimiento m;
+                m.origen = {fo, co};
+                m.destino = {fd, cd};
+
+                for (int i=0;i < numComidas;i++) {
+                    int fc, cc;
+                    archivo >> fc >> cc;
+                    m.fichasComidas.push_back({fc, cc});
+                }
+
+                ejecutarMovimiento(m);
+                historial.push_back(m);
+                turnoBlancas = !turnoBlancas;
+            }
+        }
+        //muestra los numeros de fichas
+        void MostrarFichasNumero (const vector<position> & fichas) {
+            cout << "\nTus fichas disponibles\n";
+
+            for (int i = 0; i < int(fichas.size()); i++) {
+                cout<<"Ficha"<<(i + 1)
+                    <<"--> Fila "<<fichas[i].fila
+                    <<", columna "<< fichas[i].colu<< "\n";
+            }
+        }
+    //para que la ficha se mueva ala izq o derecha
+        int ColumnaDireccion (const string& direccion){
+            if (direccion == "izq")
+                return -1;
+            if (direccion == "der")
+                return 1;
+            return 0;
+        }
+        Juego() : turnoBlancas(true) {}
+        void generarCapturasDesde(
+            position origen,
+            vector<position> capturadasPrevias,
+            tablero tableroSim,
+            vector<movimiento>& resultado
+        ) {
+
+            ficha pieza = tableroSim.obtener(origen);
+
+            for (auto& d : direccionesDe(pieza, tableroSim)) {
+
+                int fe = origen.fila + d.first;
+                int ce = origen.colu + d.second;
+
+                int fd = origen.fila + 2 * d.first;
+                int cd = origen.colu + 2 * d.second;
+
+                if (!tableroSim.dentroDelTablero(fd, cd))
+                    continue;
+
+                position posEnemigo{fe, ce};
+                position posDestino{fd, cd};
+
+
+                bool yaCapturada = false;
+
+                for (auto& p : capturadasPrevias) {
+
+                    if (p == posEnemigo) {
+                        yaCapturada = true;
+                        break;
+                    }
+                }
+
+                if (yaCapturada)
+                    continue;
+
+
+                ficha fichaEnemiga =
+                    tableroSim.obtener(posEnemigo);
+
+                ficha fichaDestino =
+                    tableroSim.obtener(posDestino);
+
+                if (
+                    tableroSim.colorContrario(
+                        pieza,
+                        fichaEnemiga
+                    )
+                    &&
+                    fichaDestino == ficha::VACIA
+                ) {
+
+                    tablero copia = tableroSim;
+
+                    copia.colocar(
                         origen,
+                        ficha::VACIA
+                    );
+
+                    copia.colocar(
+                        posEnemigo,
+                        ficha::VACIA
+                    );
+
+                    copia.colocar(
                         posDestino,
-                        nuevasCapturadas
-                    };
-
-                    resultado.push_back(mov);
-                }
-            }
-        }
-    }
-
-    vector<movimiento> generarMovimientosSimples(
-        position origen
-    ) {
-
-        vector<movimiento> movimientos;
-
-        ficha pieza = tableroJuego.obtener(origen);
-
-        for (auto& d :
-             direccionesDe(pieza, tableroJuego)) {
-
-            int nf = origen.fila + d.first;
-            int nc = origen.colu + d.second;
-
-            if (
-                tableroJuego.dentroDelTablero(nf, nc)
-                &&
-                tableroJuego.obtener({nf, nc})
-                    == ficha::VACIA
-            ) {
-
-                movimientos.push_back({
-                    origen,
-                    {nf, nc},
-                    {}
-                });
-            }
-        }
-
-        return movimientos;
-    }
-
-    // Obtiene todos los movimientos legales
-    vector<movimiento> obtenerMovimientosLegales() {
-
-        vector<movimiento> todasCapturas;
-        vector<movimiento> todosSimples;
+                        pieza
+                    );
 
 
-        for (int f = 0; f < 8; f++) {
+                    vector<position> nuevasCapturadas =
+                        capturadasPrevias;
 
-            for (int c = 0; c < 8; c++) {
-
-                position pos{f, c};
-
-                ficha pieza =
-                    tableroJuego.obtener(pos);
+                    nuevasCapturadas.push_back(
+                        posEnemigo
+                    );
 
 
-                if (pieza == ficha::VACIA)
-                    continue;
+                    vector<movimiento> continuaciones;
+
+                    generarCapturasDesde(
+                        posDestino,
+                        nuevasCapturadas,
+                        copia,
+                        continuaciones
+                    );
 
 
-                if (
-                    turnoBlancas &&
-                    !tableroJuego.esBlanca(pieza)
-                )
-                    continue;
+                    if (!continuaciones.empty()) {
 
-                if (
-                    !turnoBlancas &&
-                    !tableroJuego.esNegra(pieza)
-                )
-                    continue;
+                        for (auto& m : continuaciones)
+                            resultado.push_back(m);
 
+                    }
+                    else {
 
-                vector<movimiento> capturas;
+                        movimiento mov{
+                            origen,
+                            posDestino,
+                            nuevasCapturadas
+                        };
 
-
-                generarCapturasDesde(
-                    pos,
-                    {},
-                    tableroJuego,
-                    capturas
-                );
-
-
-                for (auto& m : capturas)
-                    todasCapturas.push_back(m);
-
-
-
-                if (capturas.empty()) {
-
-                    for (
-                        auto& m :
-                        generarMovimientosSimples(pos)
-                    ) {
-                        todosSimples.push_back(m);
+                        resultado.push_back(mov);
                     }
                 }
             }
         }
 
+        vector<movimiento> generarMovimientosSimples(
+            position origen
+        ) {
 
-        if (!todasCapturas.empty())
-            return todasCapturas;
+            vector<movimiento> movimientos;
 
-        return todosSimples;
-    }
+            ficha pieza = tableroJuego.obtener(origen);
+
+            for (auto& d :
+                direccionesDe(pieza, tableroJuego)) {
+
+                int nf = origen.fila + d.first;
+                int nc = origen.colu + d.second;
+
+                if (
+                    tableroJuego.dentroDelTablero(nf, nc)
+                    &&
+                    tableroJuego.obtener({nf, nc})
+                        == ficha::VACIA
+                ) {
+
+                    movimientos.push_back({
+                        origen,
+                        {nf, nc},
+                        {}
+                    });
+                }
+            }
+
+            return movimientos;
+        }
+
+        // Obtiene todos los movimientos legales
+        vector<movimiento> obtenerMovimientosLegales() {
+
+            vector<movimiento> todasCapturas;
+            vector<movimiento> todosSimples;
 
 
-    void ejecutarMovimiento(
-        const movimiento& mov
-    ) {
+            for (int f = 0; f < 8; f++) {
 
-        ficha pieza =
-            tableroJuego.obtener(mov.origen);
+                for (int c = 0; c < 8; c++) {
 
+                    position pos{f, c};
 
-
-        tableroJuego.colocar(
-            mov.origen,
-            ficha::VACIA
-        );
+                    ficha pieza =
+                        tableroJuego.obtener(pos);
 
 
+                    if (pieza == ficha::VACIA)
+                        continue;
 
-        for (auto& capturada :
-             mov.fichasComidas) {
+
+                    if (
+                        turnoBlancas &&
+                        !tableroJuego.esBlanca(pieza)
+                    )
+                        continue;
+
+                    if (
+                        !turnoBlancas &&
+                        !tableroJuego.esNegra(pieza)
+                    )
+                        continue;
+
+
+                    vector<movimiento> capturas;
+
+
+                    generarCapturasDesde(
+                        pos,
+                        {},
+                        tableroJuego,
+                        capturas
+                    );
+
+
+                    for (auto& m : capturas)
+                        todasCapturas.push_back(m);
+
+
+
+                    if (capturas.empty()) {
+
+                        for (
+                            auto& m :
+                            generarMovimientosSimples(pos)
+                        ) {
+                            todosSimples.push_back(m);
+                        }
+                    }
+                }
+            }
+
+
+            if (!todasCapturas.empty())
+                return todasCapturas;
+
+            return todosSimples;
+        }
+
+
+        void ejecutarMovimiento(
+            const movimiento& mov
+        ) {
+
+            ficha pieza =
+                tableroJuego.obtener(mov.origen);
+
+
 
             tableroJuego.colocar(
-                capturada,
+                mov.origen,
                 ficha::VACIA
+            );
+
+
+
+            for (auto& capturada :
+                mov.fichasComidas) {
+
+                tableroJuego.colocar(
+                    capturada,
+                    ficha::VACIA
+                );
+            }
+
+
+            tableroJuego.colocar(
+                mov.destino,
+                pieza
+            );
+
+
+
+            tableroJuego.intentarCoronar(
+                mov.destino
             );
         }
 
 
-        tableroJuego.colocar(
-            mov.destino,
-            pieza
-        );
+        bool hayGanador() {
+
+            int blancas =
+                tableroJuego.contarFichas(true);
+
+            int negras =
+                tableroJuego.contarFichas(false);
 
 
+            if (blancas == 0) {
 
-        tableroJuego.intentarCoronar(
-            mov.destino
-        );
-    }
+                cout << "\n*** GANAN LAS NEGRAS: "
+                    << "las blancas se quedaron sin fichas ***\n";
 
-
-    bool hayGanador() {
-
-        int blancas =
-            tableroJuego.contarFichas(true);
-
-        int negras =
-            tableroJuego.contarFichas(false);
+                return true;
+            }
 
 
-        if (blancas == 0) {
+            if (negras == 0) {
 
-            cout << "\n*** GANAN LAS NEGRAS: "
-                 << "las blancas se quedaron sin fichas ***\n";
+                cout << "\n*** GANAN LAS BLANCAS: "
+                    << "las negras se quedaron sin fichas ***\n";
 
-            return true;
+                return true;
+            }
+
+            if (obtenerMovimientosLegales().empty()) {
+
+                cout << "\n*** GANAN LAS "
+                    << (turnoBlancas ? "NEGRAS" : "BLANCAS")
+                    << ": "
+                    << (turnoBlancas
+                        ? "las blancas"
+                        : "las negras")
+                    << " estan bloqueadas "
+                    << "(sin movimientos) ***\n";
+
+                return true;
+            }
+            return false;
         }
 
 
-        if (negras == 0) {
+        void jugar() {
+            cout << "===================================\n";
+            cout << "          JUEGO DE DAMAS\n";
+            cout << "===================================\n";
 
-            cout << "\n*** GANAN LAS BLANCAS: "
-                 << "las negras se quedaron sin fichas ***\n";
-
-            return true;
-        }
-
-        if (obtenerMovimientosLegales().empty()) {
-
-            cout << "\n*** GANAN LAS "
-                 << (turnoBlancas ? "NEGRAS" : "BLANCAS")
-                 << ": "
-                 << (turnoBlancas
-                     ? "las blancas"
-                     : "las negras")
-                 << " estan bloqueadas "
-                 << "(sin movimientos) ***\n";
-
-            return true;
-        }
-        return false;
-    }
+            cout << "Movimiento -> numero de ficha y direccion (izq/der)\n";
+            cout << "Ejemplo: 1 izq\n";
 
 
-    void jugar() {
-        cout << "===================================\n";
-        cout << "          JUEGO DE DAMAS\n";
-        cout << "===================================\n";
+            while (true) {
 
-        cout << "Movimiento -> numero de ficha y direccion (izq/der)\n";
-        cout << "Ejemplo: 1 izq\n";
-
-
-        while (true) {
-
-            vector<position> fichasBlancas = ObtenerFichasColor(true);
-            vector<position> fichasNegras = ObtenerFichasColor(false);
-            vector<position> fichasTurno;
-            if (turnoBlancas){
-                fichasTurno = fichasBlancas;
-            }else{
-                fichasTurno = fichasNegras;
-            }
-            tableroJuego.imprimir(turnoBlancas, fichasBlancas,fichasNegras);
+                vector<position> fichasBlancas = ObtenerFichasColor(true);
+                vector<position> fichasNegras = ObtenerFichasColor(false);
+                vector<position> fichasTurno;
+                if (turnoBlancas){
+                    fichasTurno = fichasBlancas;
+                }else{
+                    fichasTurno = fichasNegras;
+                }
+                tableroJuego.imprimir(turnoBlancas, fichasBlancas,fichasNegras);
 
 
-            if (hayGanador())
-                break;
+                if (hayGanador())
+                    break;
 
 
-            cout << "\nTurno de las "
-                 << (
-                     turnoBlancas
-                     ? "BLANCAS (b/B)"
-                     : "NEGRAS (n/N)"
-                    )
-                 << "\n";
+                cout << "\nTurno de las "
+                    << (
+                        turnoBlancas
+                        ? "BLANCAS (b/B)"
+                        : "NEGRAS (n/N)"
+                        )
+                    << "\n";
 
 
-            vector<movimiento> legales =
-                obtenerMovimientosLegales();
+                vector<movimiento> legales =
+                    obtenerMovimientosLegales();
 
 
-            if (
-                !legales.empty()
-                &&
-                !legales[0].fichasComidas.empty()
-            ) {
+                if (
+                    !legales.empty()
+                    &&
+                    !legales[0].fichasComidas.empty()
+                ) {
 
-                cout << "Hay captura(s) disponible(s): "
-                     << "es obligatorio comer.\n";
-            }
+                    cout << "Hay captura(s) disponible(s): "
+                        << "es obligatorio comer.\n";
+                }
 
 
 
-            int numeroFicha;
-            string direccion;
-            auto inicio = std::chrono::high_resolution_clock::now();
+                int numeroFicha;
+                string direccion;
+                auto inicio = std::chrono::high_resolution_clock::now();
 
-            cout << "Elige ficha (numero) y direccion (izq/der): ";
+                string opci;
+                cout << "Guardar y Salir? (s/n): ";
+                cin.ignore();
+                getline(cin, opci);
 
-                
-            if (!(cin >> numeroFicha >> direccion)) {
-                cout << "Entrada invalida.\n";
-                break;
-            }
+                if (opci == "s" || opci == "si") {
+                    GuardarHistorial("partida.txt");
+                    return;
+                }
 
-            if (numeroFicha < 1 || numeroFicha > (int)fichasTurno.size()) {
-                cout << "\n Numero de ficha invalido. \n";
-                continue;
-            }
+                cout << "Elige ficha (numero) y direccion (izq/der): ";
 
-            position origen = fichasTurno[numeroFicha - 1];
+                    
+                if (!(cin >> numeroFicha >> direccion)) {
+                    cout << "Entrada invalida.\n";
+                    break;
+                }
 
-            int dc = ColumnaDireccion(direccion);
+                if (numeroFicha < 1 || numeroFicha > (int)fichasTurno.size()) {
+                    cout << "\n Numero de ficha invalido. \n";
+                    continue;
+                }
 
-            if (dc == 0) {
-                cout << "\n Direccion invalida (usa izq o der). \n";
-                continue;
-            }
+                position origen = fichasTurno[numeroFicha - 1];
 
-            movimiento* elegido = nullptr;
+                int dc = ColumnaDireccion(direccion);
 
-            for (auto& m : legales) {
+                if (dc == 0) {
+                    cout << "\n Direccion invalida (usa izq o der). \n";
+                    continue;
+                }
 
-                if (m.origen == origen) {
+                movimiento* elegido = nullptr;
 
-                    int deltaReal = m.destino.colu - m.origen.colu;
+                for (auto& m : legales) {
 
-                    bool mismaDireccion =
-                        (dc > 0 && deltaReal > 0) ||
-                        (dc < 0 && deltaReal < 0);
+                    if (m.origen == origen) {
 
-                    if (mismaDireccion) {
-                        elegido = &m;
-                        break;
+                        int deltaReal = m.destino.colu - m.origen.colu;
+
+                        bool mismaDireccion =
+                            (dc > 0 && deltaReal > 0) ||
+                            (dc < 0 && deltaReal < 0);
+
+                        if (mismaDireccion) {
+                            elegido = &m;
+                            break;
+                        }
                     }
                 }
+
+                if (!elegido) {
+
+                    cout << "\n Movimiento ilegal "
+                        << "(revisa direccion, captura "
+                        << "obligatoria, etc). \n";
+
+                    continue;
+                }
+                historial.push_back(*elegido);
+                ejecutarMovimiento(*elegido);
+                auto fin = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> duracion = fin - inicio;
+
+                std::cout << "tiempo: "<< duracion.count()<<"segundos.\n";
+                turnoBlancas = !turnoBlancas;
             }
 
-            if (!elegido) {
+            cout << "\nFin del juego.\n ";
 
-                cout << "\n Movimiento ilegal "
-                     << "(revisa direccion, captura "
-                     << "obligatoria, etc). \n";
+        }
+    };
 
-                continue;
-            }
-            historial.push_back(*elegido);
-            ejecutarMovimiento(*elegido);
-            auto fin = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> duracion = fin - inicio;
+    int main() {
 
-            std::cout << "tiempo: "<< duracion.count()<<"segundos.\n";
-            turnoBlancas = !turnoBlancas;
+        Juego juego;
+
+        char opci;
+        cout << "¿Cargar partida guardada? (s/n): ";
+        cin >> opci;
+
+        if (opci == 's') {
+            juego.CargarHistorial("partida.txt");
         }
 
-        cout << "\nFin del juego.\n ";
+        juego.jugar();
 
+        return 0;
     }
-};
-
-int main() {
-
-    Juego juego;
-
-    juego.jugar();
-
-    return 0;
-}
