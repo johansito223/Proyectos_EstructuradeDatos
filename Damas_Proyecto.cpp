@@ -2,7 +2,18 @@
     #include <vector>
     #include <chrono>
     #include <fstream>
+    #include <conio.h>
+
     using namespace std;
+
+    enum Tecla {ARRIBA = 72, ABAJO = 80, IZQUIERDA = 75, DERECHA = 77, ENTER = 13};
+    int leerFlecha(){
+        int tecla = _getch();
+        if (tecla == 224 || tecla == 0) {
+            tecla = _getch();
+        }
+        return tecla;
+    }
 
     enum class ficha {
         VACIA,
@@ -31,6 +42,7 @@
         const string COLOR_TURNO = "\033[1;33m";
         const string COLOR_NOTURNO = "\033[5;33m";
         const string COLOR_RESET = "\033[0m";
+        const string COLOR_SELECCION = "\033[1;32m";
     public:
         tablero() {
 
@@ -93,7 +105,7 @@
         }
 
 
-        void imprimir(bool turnoBlancas, const vector<position>& fichasBlancas, const vector<position>& fichasNegras) const { 
+        void imprimir(bool turnoBlancas, const vector<position>& fichasBlancas, const vector<position>& fichasNegras, position resaltada = {-1, -1}) const { 
 
             
             
@@ -146,7 +158,12 @@
                     }
                     //para colorear las fichas
                     bool ColorTurnoActual = (turnoBlancas && esFichaBlanca) || (!turnoBlancas && esFichaNegra);
-                    const string& color = ColorTurnoActual ? COLOR_TURNO : "";
+                    string color = "";
+                    if (f == resaltada.fila && c == resaltada.colu){
+                        color = COLOR_SELECCION;
+                    } else if(ColorTurnoActual){
+                        color = COLOR_TURNO;
+                    }
                     if (numero != 0) {
                         if (numero >= 10) {
                             cout << " " << color << numero << COLOR_RESET << "  |";
@@ -692,20 +709,43 @@
 
                 string opci;
                 cout << "Guardar y Salir? (s/n): ";
-                cin.ignore();
-                getline(cin, opci);
+
 
                 if (opci == "s" || opci == "si") {
                     GuardarHistorial("partida.txt");
                     return;
                 }
 
-                cout << "Elige ficha (numero) y direccion (izq/der): ";
+                int indiceSeleccionado = 0;
+                cout<<"\nUsa las flechas para  moverte izquierda o derecha,ENTER para comfirmar\n";
 
-                    
-                if (!(cin >> numeroFicha >> direccion)) {
-                    cout << "Entrada invalida.\n";
-                    break;
+                while (true) {
+                    tableroJuego.imprimir(turnoBlancas, fichasBlancas,fichasNegras,fichasTurno[indiceSeleccionado]);
+                    cout<< "Ficha seleccionada: "<<(indiceSeleccionado + 1)<<"\n";
+
+                    int tecla = leerFlecha();
+
+                    if (tecla == DERECHA){
+                        indiceSeleccionado = (indiceSeleccionado + 1) % fichasTurno.size();
+                    }else if (tecla == IZQUIERDA){
+                        indiceSeleccionado = (indiceSeleccionado - 1 + fichasTurno.size()) % fichasTurno.size();
+                    }else if (tecla == ENTER){
+                        numeroFicha = indiceSeleccionado + 1;
+                        break;
+                    }
+                }
+
+                cout<<"\nElige direccion: Flecha IZQ o DER, ENTER para confirmar\n";
+                while (true){
+                    int tecla = leerFlecha();
+                    if (tecla == IZQUIERDA){
+                        direccion = "izq";
+                        break;
+                    }
+                    if (tecla == DERECHA){
+                        direccion = "der";
+                        break;
+                    }
                 }
 
                 if (numeroFicha < 1 || numeroFicha > (int)fichasTurno.size()) {
